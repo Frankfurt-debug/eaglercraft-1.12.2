@@ -10,6 +10,9 @@ PAPER_VERSION="1.21.4"
 echo "=== Eaglercraft 1.12.2 Server Setup ==="
 echo ""
 
+echo "[0/4] Installing dependencies..."
+sudo apt-get update -qq && sudo apt-get install -y -qq python3 curl screen
+
 # ── 1. Paper backend ──────────────────────────────────────────────────────────
 echo "[1/4] Downloading Paper $PAPER_VERSION..."
 mkdir -p paper/plugins
