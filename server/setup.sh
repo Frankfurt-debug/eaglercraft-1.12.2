@@ -37,23 +37,31 @@ echo "[2/4] Downloading ViaVersion + ViaBackwards..."
 
 # Helper: download the latest release file for a Modrinth project that supports
 # our Paper version. Falls back to the newest file if no exact game-version match.
+UA="eaglercraft-server-setup/1.0 (github.com/Frankfurt-debug/eaglercraft-1.12.2)"
 modrinth_dl() {
   local slug="$1" out="$2"
   local url
-  url=$(curl -fsSL "https://api.modrinth.com/v2/project/$slug/version" | python3 -c "
+  url=$(curl -fsSL -A "$UA" "https://api.modrinth.com/v2/project/$slug/version?loaders=%5B%22paper%22%5D" | python3 -c "
 import sys, json
 versions = json.load(sys.stdin)
+def primary(v):
+    for f in v['files']:
+        if f.get('primary'):
+            return f['url']
+    return v['files'][0]['url']
 def pick():
     for v in versions:
-        if '$PAPER_VERSION' in v.get('game_versions', []) and 'paper' in v.get('loaders', []):
-            return v['files'][0]['url']
-    for v in versions:
         if '$PAPER_VERSION' in v.get('game_versions', []):
-            return v['files'][0]['url']
-    return versions[0]['files'][0]['url']
+            return primary(v)
+    return primary(versions[0])
 print(pick())
 ")
-  curl -fsSL -o "$out" "$url"
+  if [ -z "$url" ]; then
+    echo "ERROR: could not resolve a download URL for '$slug' from Modrinth." >&2
+    exit 1
+  fi
+  echo "  -> $url"
+  curl -fsSL -A "$UA" -o "$out" "$url"
 }
 
 modrinth_dl viaversion   paper/plugins/ViaVersion.jar
