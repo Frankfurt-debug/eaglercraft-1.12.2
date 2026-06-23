@@ -6,8 +6,6 @@
 set -e
 
 PAPER_VERSION="1.21.4"
-PAPER_BUILD="150"
-VELOCITY_BUILD="605"
 
 echo "=== Eaglercraft 1.12.2 Server Setup ==="
 echo ""
@@ -15,6 +13,7 @@ echo ""
 # ── 1. Paper backend ──────────────────────────────────────────────────────────
 echo "[1/4] Downloading Paper $PAPER_VERSION..."
 mkdir -p paper/plugins
+PAPER_BUILD=$(curl -fsSL "https://api.papermc.io/v2/projects/paper/versions/$PAPER_VERSION" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['builds'][-1])")
 curl -fsSL -o paper/paper.jar \
   "https://api.papermc.io/v2/projects/paper/versions/$PAPER_VERSION/builds/$PAPER_BUILD/downloads/paper-$PAPER_VERSION-$PAPER_BUILD.jar"
 
@@ -48,8 +47,10 @@ curl -fsSL -o paper/plugins/ViaBackwards.jar \
 # ── 3. Velocity proxy ─────────────────────────────────────────────────────────
 echo "[3/4] Downloading Velocity proxy..."
 mkdir -p velocity/plugins
+VELOCITY_VERSION=$(curl -fsSL "https://api.papermc.io/v2/projects/velocity" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['versions'][-1])")
+VELOCITY_BUILD=$(curl -fsSL "https://api.papermc.io/v2/projects/velocity/versions/$VELOCITY_VERSION" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['builds'][-1])")
 curl -fsSL -o velocity/velocity.jar \
-  "https://api.papermc.io/v2/projects/velocity/versions/3.5.0-SNAPSHOT/builds/$VELOCITY_BUILD/downloads/velocity-3.5.0-SNAPSHOT-$VELOCITY_BUILD.jar"
+  "https://api.papermc.io/v2/projects/velocity/versions/$VELOCITY_VERSION/builds/$VELOCITY_BUILD/downloads/velocity-$VELOCITY_VERSION-$VELOCITY_BUILD.jar"
 
 # Generate a forwarding secret (used to authenticate the proxy → backend connection)
 FORWARD_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)
