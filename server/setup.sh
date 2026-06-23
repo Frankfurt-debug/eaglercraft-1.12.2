@@ -34,15 +34,30 @@ EOF
 
 # ── 2. Via* plugins (protocol translation 1.12.2 → 1.21.4) ──────────────────
 echo "[2/4] Downloading ViaVersion + ViaBackwards..."
-curl -fsSL -o paper/plugins/ViaVersion.jar \
-  "https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion-LATEST.jar" || \
-curl -fsSL -o paper/plugins/ViaVersion.jar \
-  "https://hangar.papermc.io/api/v1/projects/ViaVersion/versions/latest/PAPER/download"
 
-curl -fsSL -o paper/plugins/ViaBackwards.jar \
-  "https://github.com/ViaVersion/ViaBackwards/releases/latest/download/ViaBackwards-LATEST.jar" || \
-curl -fsSL -o paper/plugins/ViaBackwards.jar \
-  "https://hangar.papermc.io/api/v1/projects/ViaBackwards/versions/latest/PAPER/download"
+# Helper: download the latest release file for a Modrinth project that supports
+# our Paper version. Falls back to the newest file if no exact game-version match.
+modrinth_dl() {
+  local slug="$1" out="$2"
+  local url
+  url=$(curl -fsSL "https://api.modrinth.com/v2/project/$slug/version" | python3 -c "
+import sys, json
+versions = json.load(sys.stdin)
+def pick():
+    for v in versions:
+        if '$PAPER_VERSION' in v.get('game_versions', []) and 'paper' in v.get('loaders', []):
+            return v['files'][0]['url']
+    for v in versions:
+        if '$PAPER_VERSION' in v.get('game_versions', []):
+            return v['files'][0]['url']
+    return versions[0]['files'][0]['url']
+print(pick())
+")
+  curl -fsSL -o "$out" "$url"
+}
+
+modrinth_dl viaversion   paper/plugins/ViaVersion.jar
+modrinth_dl viabackwards paper/plugins/ViaBackwards.jar
 
 # ── 3. Velocity proxy ─────────────────────────────────────────────────────────
 echo "[3/4] Downloading Velocity proxy..."
