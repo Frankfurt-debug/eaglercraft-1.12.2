@@ -1,0 +1,25 @@
+{
+  "name": "Eaglercraft Server",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "jdk": true
+    }
+  },
+  "forwardPorts": [8081, 25565],
+  "portsAttributes": {
+    "8081": {
+      "label": "Eaglercraft WebSocket",
+      "onAutoForward": "notify",
+      "protocol": "https"
+    },
+    "25565": {
+      "label": "Minecraft Backend",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "sudo apt-get install -y screen curl && cd server && chmod +x setup.sh START.sh && ./setup.sh",
+  "postStartCommand": "cd server && ./START.sh",
+  "remoteUser": "vscode"
+}
