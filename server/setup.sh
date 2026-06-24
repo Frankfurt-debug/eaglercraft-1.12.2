@@ -127,14 +127,27 @@ EOF
 echo "$FORWARD_SECRET" > velocity/forwarding.secret
 
 # ── 4. EaglerXServer plugin (WebSocket → Java protocol bridge) ────────────────
+# Run Velocity once briefly to generate EaglerXServer config files, then patch them
 echo "[4/4] Downloading EaglerXServer plugin..."
 curl -fsSL -o velocity/plugins/EaglerXServer.jar \
   "https://github.com/lax1dude/eaglerxserver/releases/latest/download/EaglerXServer.jar"
 
-# Also needed on the Paper backend for modern forwarding support
 curl -fsSL -o paper/plugins/EaglerXBackendRPC.jar \
   "https://github.com/lax1dude/eaglerxserver/releases/latest/download/EaglerXBackendRPC.jar" 2>/dev/null || \
   echo "  (EaglerXBackendRPC not found separately - check eaglerxserver releases page)"
+
+# Generate EaglerXServer config by running Velocity for 5 seconds then patching it
+echo "  Generating EaglerXServer config..."
+(cd velocity && timeout 8 java -Xmx256M -jar velocity.jar 2>/dev/null || true)
+
+LISTENERS_TOML="velocity/plugins/eaglerxserver/listeners.toml"
+if [ -f "$LISTENERS_TOML" ]; then
+  sed -i 's/inject_address = "0.0.0.0:25565"/inject_address = "0.0.0.0:8081"/' "$LISTENERS_TOML"
+  sed -i 's/velocity_clone_listener = false/velocity_clone_listener = true/' "$LISTENERS_TOML"
+  echo "  EaglerXServer listener configured on port 8081."
+else
+  echo "  WARNING: listeners.toml not generated. You may need to configure EaglerXServer manually."
+fi
 
 # Paper needs modern forwarding secret too
 mkdir -p paper/config
